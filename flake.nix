@@ -9,30 +9,40 @@
     in {
 
       overlay = final: prev: {
-
-        nix-serve = with final; stdenv.mkDerivation {
+        nix-serve = with final; let
+          cpp-httplib = stdenv.mkDerivation rec {
+            pname = "cpp-httplib";
+            version = "0.9.2";
+            src = fetchFromGitHub {
+              owner = "yhirose";
+              repo = "cpp-httplib";
+              rev = "v${version}";
+              sha256 = "sha256-BIZrH/kMokr7UTfbQcZXHDQKcAvE1Z/7/LlxSn40Oa4=";
+            };
+            installPhase = ''
+              install -D httplib.h $out/include/httplib.h
+            '';
+            meta = with lib; {
+              description = "A C++ header-only HTTP/HTTPS server and client library";
+              homepage = "https://github.com/yhirose/cpp-httplib";
+              license = licenses.mit;
+              platforms = platforms.unix;
+            };
+          };
+        in stdenv.mkDerivation {
           name = "nix-serve-${self.lastModifiedDate}";
 
-          buildInputs = [ perl nix.perl-bindings perlPackages.Plack perlPackages.Starman perlPackages.DBDSQLite ];
+          src = self;
 
-          unpackPhase = "true";
-
-          installPhase =
-            ''
-              mkdir -p $out/libexec/nix-serve
-              cp ${./nix-serve.psgi} $out/libexec/nix-serve/nix-serve.psgi
-
-              mkdir -p $out/bin
-              cat > $out/bin/nix-serve <<EOF
-              #! ${stdenv.shell}
-              PERL5LIB=$PERL5LIB \
-              NIX_REMOTE="\''${NIX_REMOTE:-auto?path-info-cache-size=0}" \
-              exec ${perlPackages.Starman}/bin/starman $out/libexec/nix-serve/nix-serve.psgi "\$@"
-              EOF
-              chmod +x $out/bin/nix-serve
-            '';
+          buildInputs = [
+            nixUnstable
+            boost
+            nlohmann_json
+            cpp-httplib
+          ];
+          installFlags = [ "PREFIX=$(out)" ];
+          nativeBuildInputs = [ pkg-config ];
         };
-
       };
 
       packages = forAllSystems (system: {
