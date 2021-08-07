@@ -1,5 +1,5 @@
 {
-  inputs.nixpkgs.url = "nixpkgs/nixos-20.09";
+  inputs.nixpkgs.url = "nixpkgs/nixos-21.05";
 
   outputs = { self, nixpkgs }:
 
