@@ -8,6 +8,7 @@
 #include <nix/archive.hh>
 #include <nix/common-args.hh>
 
+#include <nlohmann/json.hpp>
 #include <httplib.h>
 
 std::string stripTrailingSlash(std::string s) {
@@ -146,6 +147,15 @@ void serve(nix::ref<nix::Store> store, std::optional<nix::SecretKey> secretKey) 
             sink.done();
             return true;
         });
+    });
+
+    svr.Get(R"(^/realisations/(.*)\.doi$)", [store](const httplib::Request& req, httplib::Response& res) {
+        auto outputId = req.matches[1];
+        auto realisation = store->queryRealisation(nix::DrvOutput::parse(outputId));
+        if (!realisation) {
+            return notFound(res, "No such derivation output.\n");
+        }
+        res.set_content(realisation->toJSON().dump().c_str(), "application/json");
     });
 
     // FIXME: remove soon.
