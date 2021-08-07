@@ -19,8 +19,15 @@
               rev = "v${version}";
               sha256 = "sha256-BIZrH/kMokr7UTfbQcZXHDQKcAvE1Z/7/LlxSn40Oa4=";
             };
+            nativeBuildInputs = [ python3 ];
+            buildPhase = ''
+              python3 ./split.py
+              $CXX -c -O3 out/httplib.cc -o httplib.o
+              ar rcs libhttplib.a httplib.o
+            '';
             installPhase = ''
-              install -D httplib.h $out/include/httplib.h
+              install -D out/httplib.h $out/include/httplib.h
+              install -D libhttplib.a $out/lib/libhttplib.a
             '';
             meta = with lib; {
               description = "A C++ header-only HTTP/HTTPS server and client library";
@@ -39,6 +46,7 @@
             boost
             nlohmann_json
             cpp-httplib
+            gtest
           ];
           installFlags = [ "PREFIX=$(out)" ];
           nativeBuildInputs = [ pkg-config ];
